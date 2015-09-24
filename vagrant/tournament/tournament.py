@@ -78,6 +78,7 @@ def playerStandings():
         GROUP BY players.id
         ORDER BY wc DESC;
         ''')
+
     winners = c.fetchall()
 
     c.execute('''
@@ -111,6 +112,25 @@ def playerStandings():
     """
 
 
+def dbquery(dbname, qtype, query):
+    conn=psycopg2.connect("dbname=%s" % dbname)
+    c=conn.cursor()
+    c.execute(query)
+    
+    values = None
+
+    if qtype == 'insert' or qtype == "delete" or qtype == "update":
+        conn.commit()
+        values = True
+
+    elif qtype == 'selectall':
+        values = c.fetchall()   
+
+    elif qtype == 'selectone':
+        values = c.fetchone() 
+    conn.close()    
+    return values
+
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
 
@@ -118,23 +138,35 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    conn=psycopg2.connect("dbname=tournament")
-    c=conn.cursor()
     
-    c.execute('INSERT INTO matches (winner, loser) VALUES (%s, %s);', (winner, loser,)) #SQL injection safe?
+    query = "INSERT INTO matches (winner, loser) VALUES (" + str(winner) + "," + str(loser) + ");"
+    dbquery("tournament", "insert", query)
+    
+ 
 
-    conn.commit()
-    conn.close()
  
- 
+def findMatchingPlayer(player1):
+    # search for all players, who have not played with a player1 and return one with highest # of wins
+    
+    query = """
+        SELECT w.id 
+        FROM players, matches 
+        WHERE (winner = %s and loser = %s) or (loser = %s and winner = %s)
+        """
+    matching_player = dbquery("tournament", "selectone", query)
+
 def swissPairings():
     standings = playerStandings()
     n = 0
     pairings = []
-    while n < len(standings):
-        
-        pairings.append((standings[n][0], standings[n][1], standings[n+1][0], standings[n+1][1]))
+
+    while n < len(standings)-1: 
+
+        next = 1
+        pairings.append((standings[n][0], standings[n][1], standings[n+next][0], standings[n+next][1]))
         n += 2
+
+    
 
     return pairings
 
