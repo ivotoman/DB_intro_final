@@ -1,4 +1,1 @@
-rdb-fullstack
-=============
-
-Common code for the Relational Databases and Full Stack Fundamentals courses
+a more detailed README file is in the tournament folder. this README is dedicated for generic orientation only.
